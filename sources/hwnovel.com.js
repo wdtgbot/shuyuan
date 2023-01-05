@@ -2,21 +2,21 @@ require('crypto-js')
 
 function guid() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+    let r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
     return v.toString(16);
   }).replaceAll("-","");
 }
 
-const decrypt = function (data) {
-    let key = CryptoJS.enc.Utf8.parse('ZUreQN0E')
-    decrypted = CryptoJS.DES.decrypt(data, key, {
-        mode: CryptoJS.mode.ECB,
-        padding: CryptoJS.pad.Pkcs7
-    })
-    return decrypted.toString(CryptoJS.enc.Utf8)
+function decrypt(data) {
+  let key = CryptoJS.enc.Utf8.parse('ZUreQN0E')
+  decrypted = CryptoJS.DES.decrypt(data, key, {
+    mode: CryptoJS.mode.ECB,
+    padding: CryptoJS.pad.Pkcs7
+  })
+  return decrypted.toString(CryptoJS.enc.Utf8)
 }
 
-const encrypt = function (data) {
+function encrypt(data) {
   let key = CryptoJS.enc.Utf8.parse('ZUreQN0E')
   encrypted = CryptoJS.DES.encrypt(data, key, {
     mode: CryptoJS.mode.ECB,
@@ -25,9 +25,9 @@ const encrypt = function (data) {
   return encrypted.toString()
 }
 
-const headers = ["channel:25","deviceno:0000000000000000","platform:1","imei:","targetmodel:Mi 10","oaid:","version:3.2.5",`token:${localStorage.getItem('tk')}`,"user-agent:Mozilla/5.0 (Linux; Android 11; Pixel 4 XL Build/RP1A.200720.009; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/92.0.4515.115 Mobile Safari/537.36"]
+const headers = ["channel:25","deviceno:0000000000000000","platform:1","imei:","targetmodel:Mi 10","oaid:","version:3.2.9",`token:${localStorage.getItem('tk')}`,"user-agent:Mozilla/5.0 (Linux; Android 11; Pixel 4 XL Build/RP1A.200720.009; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/92.0.4515.115 Mobile Safari/537.36"]
 
-const CGET = function (url, da) {
+function CGET(url, da) {
   let timestamp = Math.round(new Date())
   let requestId = guid()
   let param = encrypt(JSON.stringify({
@@ -36,12 +36,12 @@ const CGET = function (url, da) {
   }))
   let sign = CryptoJS.MD5(ENCODE(`param=${param}&requestId=${requestId}&timestamp=${timestamp}&key=NpkTYvpvhJjEog8Y051gQDHmReY54z5t3F0zSd9QEFuxWGqfC8g8Y4GPuabq0KPdxArlji4dSnnHCARHnkqYBLu7iIw55ibTo18`,"base64").replaceAll("\n","")).toString().toUpperCase()
   let data = JSON.stringify({
-      param,
-      requestId,
-      sign,
-      timestamp
-    })
-  url = `https://api.hwnovel.com/${url}`
+    param,
+    requestId,
+    sign,
+    timestamp
+  })
+  url = `https://api.hwnovel.com/api/ciyuanji/client/${url}`
   let res = JSON.parse(POST(url,{data,headers}))
   return res
 }
@@ -108,31 +108,22 @@ const catalog = (url) => {
   }))
   let sign = CryptoJS.MD5(ENCODE(`param=${param}&requestId=${requestId}&timestamp=${timestamp}&key=NpkTYvpvhJjEog8Y051gQDHmReY54z5t3F0zSd9QEFuxWGqfC8g8Y4GPuabq0KPdxArlji4dSnnHCARHnkqYBLu7iIw55ibTo18`,"base64").replaceAll("\n","")).toString().toUpperCase()
   let response = GET(`https://api.hwnovel.com/api/ciyuanji/client/chapter/getChapterListByBookId?timestamp=${timestamp}&requestId=${requestId}&sign=${sign}&param=${param}`,{headers})
-    let vlist = []
-    let array = []
-    let vidlist = []
-    let list = JSON.parse(response).data.bookChapter.chapterList
-    list.forEach((booklet) => {
-        if (vidlist.indexOf(booklet.volumeId) == -1) {
-            vlist.push(booklet);
-            vidlist.push(booklet.volumeId)
-        }
+  let $ = JSON.parse(response).data
+  let array = []
+  let v = []
+  $.bookChapter.chapterList.forEach((x) => {
+    if (JSON.stringify(v).indexOf(x.title) == -1) {
+      array.push({
+        name: x.title
+      	})
+      v.push(x.title)
+    }
+    array.push({
+      name: x.chapterName,
+      url: `a?bid=${url}&cid=${x.chapterId}`,
+      vip: x.isFee == 1
     })
-    vlist.forEach((booklet) => {
-        let vid = booklet.volumeId
-        array.push({
-            name: booklet.title
-        })
-        list.forEach((chapter) => {
-            if (vid == chapter.volumeId) {
-                array.push({
-                  name: chapter.chapterName,
-                  url: `a?bid=${url}&cid=${chapter.chapterId}`,
-                  vip: chapter.isFee == 1
-                })
-            }
-        })
-    })
+  })
   return JSON.stringify(array)
 }
 
@@ -153,8 +144,8 @@ const chapter = (url) => {
     code: 403,
     message: `https://www.ciyuanji.com/chapter/${url.query('cid')}.html?bookId=${url.query('bid')}&ua=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36`
   })
-    if($.chapter.imgList) return decrypt($.chapter.content.replaceAll("\n","")).trim() + "\r\n" + $.chapter.imgList.map((item)=>{ return "<img src='" + item.imgUrl + "'/>"}).join("\n")
-    else return decrypt($.chapter.content.replaceAll("\n","")).trim()
+  if($.chapter.imgList) return decrypt($.chapter.content.replaceAll("\n","")).trim() + "\r\n" + $.chapter.imgList.map((item)=>{ return "<img src='" + item.imgUrl + "'/>"}).join("\n")
+  else return decrypt($.chapter.content.replaceAll("\n","")).trim()
 }
 
 /**
@@ -162,7 +153,7 @@ const chapter = (url) => {
  * @returns {[{url, nickname, recharge, balance[{name, coin}], sign}]}
  */
 const profile = () => {
-  if(localStorage.getItem('tk') != 0) {
+  if(localStorage.getItem('tk').length != 0) {
     let timestamp = Math.round(new Date())
     let requestId = guid()
     let param = encrypt(JSON.stringify({
@@ -241,9 +232,9 @@ const bookshelf = (page) => {
 }
 
 const sign = () => {
-  CGET('api/ciyuanji/client/sign/sign',{}) //签到
-  CGET("api/ciyuanji/client/bookrack/addOrDeleteBookRack",{"bookIdList":["14447"],"isDelete":"0"}) //加入书架
-  CGET("api/ciyuanji/client/bookrack/addOrDeleteBookRack",{"bookIdList":["14447"],"isDelete":"1"}) //删除书架
+  CGET('sign/sign',{}) //签到
+  CGET("bookrack/addOrDeleteBookRack",{"bookIdList":["14447"],"isDelete":"0"}) //加入书架
+  CGET("bookrack/addOrDeleteBookRack",{"bookIdList":["14447"],"isDelete":"1"}) //删除书架
   return true
 }
 
@@ -372,7 +363,7 @@ const login = (args) => {
 var bookSource = JSON.stringify({
   name: "次元姬小说",
   url: "hwnovel.com",
-  version: 104,
+  version: 105,
   authorization: JSON.stringify(['account','password']),
   cookies: [".hwnovel.com"],
   ranks: ranks

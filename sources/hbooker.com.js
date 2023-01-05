@@ -11,12 +11,37 @@ const decrypt = function (data, key) {
   return decrypted.toString(CryptoJS.enc.Utf8)
 }
 
-const login_token = localStorage.getItem('loginToken')
+const login_token = localStorage.getItem('login_token')
 const account = localStorage.getItem('account')
-const app_version = "1.5.581"
+const app_version = "1.5.587"
 const device_token = "shuke_"
 
-const headers = ["user-agent:Android  com.kuangxiang.novel  1.5.581,Xiaomi, Mi 12"]
+const headers = [`user-agent:Android  com.kuangxiang.novel  ${app_version},Xiaomi, Mi 10, 31, 12`]
+
+function JsonToUrl(data) {
+  let tempArr = [];
+  for (let i in data) {
+    let key = encodeURIComponent(i);
+    let value = encodeURIComponent(data[i]);
+    tempArr.push(key + '=' + value);
+  }
+  let urlParamsStr = tempArr.join('&');
+  return urlParamsStr;
+}
+
+function CGET(url,da) {
+  url = `https://sk.hbooker.com/${url}`
+  let data = {
+    ...da,
+    app_version,
+    device_token,
+    login_token,
+    account
+  }
+  let response = POST(url,{data:JsonToUrl(data),headers})
+  let $ = JSON.parse(decrypt(response))
+  return $.data
+}
 
 /**
  * 搜索
@@ -24,8 +49,10 @@ const headers = ["user-agent:Android  com.kuangxiang.novel  1.5.581,Xiaomi, Mi 1
  * @returns {[{name, author, cover, detail}]}
  */
 const search = (key) => {
-  let response = POST('https://sk.hbooker.com/bookcity/get_filter_search_book_list',{data:`app_version=${app_version}&count=30&device_token=${device_token}&login_token=${login_token}&key=${key}&account=${account}`,headers})
-  let $ = JSON.parse(decrypt(response)).data
+  let $ = CGET('bookcity/get_filter_search_book_list', {
+    count: 30,
+    key: key
+  })
   let array = []
   $.book_list.forEach((child) => {
     array.push({
@@ -44,8 +71,9 @@ const search = (key) => {
  * @returns {[{summary, status, category, words, update, lastChapter, catalog}]}
  */
 const detail = (url) => {
-  let response = POST('https://sk.hbooker.com/book/get_info_by_id',{data:`app_version=${app_version}&device_token=${device_token}&book_id=${url}&login_token=${login_token}&account=${account}`,headers})
-  let $ = JSON.parse(decrypt(response)).data.book_info
+  let $ = CGET('book/get_info_by_id', {
+    book_id: url
+  }).book_info
   let book = {
     summary: $.description,
     status: $.up_status == '1' ? '完结' : '连载',
@@ -64,15 +92,18 @@ const detail = (url) => {
  * @returns {[{name, url, vip}]}
  */
 const catalog = (url) => {
-  let dres = JSON.parse(decrypt(POST('https://sk.hbooker.com/book/get_division_list',{data:`app_version=${app_version}&device_token=${device_token}&login_token=${login_token}&book_id=${url}&account=${account}`,headers}))).data
+  let dres = CGET('book/get_division_list',{
+    book_id: url
+  })
   let dlist = dres.division_list
   let array = []
   dlist.forEach((d) => {
     array.push({
       name: d.division_name,
     })
-    let response = POST('https://sk.hbooker.com/chapter/get_updated_chapter_by_division_id',{data:`app_version=${app_version}&device_token=${device_token}&division_id=${d.division_id}&login_token=${login_token}&account=${account}`,headers})
-    let $ = JSON.parse(decrypt(response)).data.chapter_list
+    let $ = CGET('chapter/get_updated_chapter_by_division_id', {
+      division_id: d.division_id
+    }).chapter_list
     //过滤未审核章节
     let result = $.filter(function(item) {
       return item.is_valid == 1
@@ -94,10 +125,14 @@ const catalog = (url) => {
  * @returns {string}
  */
 const chapter = (url) => {
-  let kres = JSON.parse(decrypt(POST(`https://sk.hbooker.com/chapter/get_chapter_cmd`,{data:`app_version=${app_version}&device_token=${device_token}&chapter_id=${url}&login_token=${login_token}&account=${account}`,headers})))
-  let key = kres.data.command
-  let response = POST(`https://sk.hbooker.com/chapter/get_cpt_ifm`,{data:`chapter_command=${key}&app_version=${app_version}&device_token=${device_token}&chapter_id=${url}&login_token=${login_token}&account=${account}`,headers})
-  let $ = JSON.parse(decrypt(response)).data
+  let kres = CGET('chapter/get_chapter_cmd',{
+    chapter_id: url
+  })
+  let key = kres.command
+  let $ = CGET('chapter/get_cpt_ifm', {
+    chapter_command: key,
+    chapter_id: url 
+  })
   let txt = $.chapter_info.txt_content
   txt = decrypt(txt, key)
   txt = txt.trim()
@@ -115,8 +150,7 @@ const chapter = (url) => {
  * @returns {[{url, nickname, recharge, balance[{name, coin}], sign}]}
  */
 const profile = () => {
-  let response = POST('https://sk.hbooker.com/reader/get_my_info',{data:`app_version=${app_version}&device_token=${device_token}&login_token=${login_token}&account=${account}`,headers})
-  let $ = JSON.parse(decrypt(response)).data
+  let $ = CGET('reader/get_my_info', {})
   return JSON.stringify({
     basic: [{
       name: '账号',
@@ -156,17 +190,21 @@ const profile = () => {
       type: 'books',
       method: 'bookshelf'
     }
-    ],
+    ]
   })
 }
 
 //书架
 const bookshelf = () => {
-  let shelves = JSON.parse(decrypt(POST('https://sk.hbooker.com/bookshelf/get_shelf_list',{data:`app_version=${app_version}&device_token=${device_token}&login_token=${login_token}&account=${account}`,headers}))).data
+  let shelves = CGET('bookshelf/get_shelf_list', {})
   let books = []
   shelves.shelf_list.forEach((shelf) => {
-    let response = POST('https://sk.hbooker.com/bookshelf/get_shelf_book_list_new',{data:`app_version=${app_version}&device_token=${device_token}&count=99999&shelf_id=${shelf.shelf_id}&page=0&login_token=${login_token}&account=${account}&order=last_read_time`,headers})
-    let $ = JSON.parse(decrypt(response)).data
+    let $ = CGET('bookshelf/get_shelf_book_list_new', {
+      count: 99999,
+      shelf_id: shelf.shelf_id,
+      page: 0,
+      order: "last_read_time"
+    })
     $.book_list.forEach((book) => {
       books.push({
         name: book.book_info.book_name,
@@ -180,8 +218,7 @@ const bookshelf = () => {
 }
 
 const sign = () => {
-  let response = POST('https://sk.hbooker.com/task/get_sign_record',{data:`app_version=${app_version}&device_token=${device_token}&login_token=${login_token}&account=${account}`,headers})
-  let $ = JSON.parse(decrypt(response)).data
+  let $ = CGET('task/get_sign_record',{})
   let d = new Date()
   let date =
     d.getFullYear() +
@@ -191,7 +228,7 @@ const sign = () => {
     d.getDate().toString().padStart(2, '0')
   let robj = $.sign_record_list.find((r) => r.date == date)
   if (robj.is_signed != '0') return true
-  POST('https://sk.hbooker.com/reader/get_task_bonus_with_sign_recommend',{data:`app_version=${app_version}&device_token=${device_token}&task_type=1&login_token=${login_token}&account=${account}`,headers})
+  CGET('reader/get_task_bonus_with_sign_recommend',{})
   return true
 }
 
@@ -365,9 +402,14 @@ const ranks = [
 ]
 
 const rank = (title, category, page) => {
+  let $ = CGET('bookcity/get_rank_book_list', {
+    time_type: category,
+    count: 20,
+    page: page,
+    category_index: 0,
+    order: title
+  })
   let array = []
-  let response = POST('https://sk.hbooker.com/bookcity/get_rank_book_list',{data:`time_type=${category}&app_version=${app_version}&device_token=${device_token}&count=20&page=${page}&login_token=${login_token}&category_index=0&account=${account}&order=${title}`,headers})
-  let $ = JSON.parse(decrypt(response))
   $.data.book_list.forEach((r) => {
     array.push({
       name: r.book_name,
@@ -384,19 +426,20 @@ const rank = (title, category, page) => {
 
 const login = (args) => {
   if (!args) return '参数不能为空'
-  let response = POST('https://sk.hbooker.com/signup/login', {data:`login_name=${args[0]}&app_version=${app_version}&passwd=${args[1]}&device_token=${device_token}&login_token=&account=`,headers})
+  let response = POST("https://sk.hbooker.com/signup/login",{data: `login_name=${args[0]}&app_version=${app_version}&passwd=${args[1]}&device_token=${device_token}`,headers})
   let $ = JSON.parse(decrypt(response))
-  if ($.tip) return $.tip
-  let loginToken = $.data.login_token
-  let account = $.data.reader_info.account
-  localStorage.setItem('loginToken', loginToken)
-  localStorage.setItem('account', account)
+  if ($.code == "100000") {
+    let login_token = $.data.login_token
+    let account = $.data.reader_info.account
+    localStorage.setItem('login_token', login_token)
+    localStorage.setItem('account', account)
+  } else return $.tip
 }
 
 var bookSource = JSON.stringify({
-  name: '刺猬猫阅读',
+  name: '欢乐书客',
   url: 'hbooker.com',
-  version: 112,
+  version: 113,
   authorization: JSON.stringify(['account', 'password']),
   cookies: ['.hbooker.com'],
   ranks: ranks

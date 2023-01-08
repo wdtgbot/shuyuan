@@ -100,9 +100,16 @@ const chapter = (url) => {
     code: 403,
     message: `https://h5.shaoniandream.com/pages/chapter/index?bookid=${$.data.BookID}&chapterid=${$.data.id}`
   })
-  return $.data.show_content.map((item)=>{
+  let content = $.data.show_content.map((item)=>{
     return DECODE(item.content,"base64")
   }).join("\n").trim()
+  let img = $.data.chapterpic.map((item)=>{
+    return `<img src="http://alioss.shaoniandream.com${item.url}" />`
+  }).join("\n").trim()
+  let miaoshu = DECODE($.data.miaoshu,"base64")
+  if(miaoshu != "")
+    return `${content}\n${img}\n作者有话说：\n${miaoshu}`
+  else return `${content}\n${img}`
 }
 
 /**
@@ -280,7 +287,7 @@ const login = (args) => {
 var bookSource = JSON.stringify({
   name: "少年梦阅读",
   url: "shaoniandream.com",
-  version: 100,
+  version: 101,
   authorization: JSON.stringify(['account','password']),
   cookies: [".shaoniandream.com"],
   ranks: ranks

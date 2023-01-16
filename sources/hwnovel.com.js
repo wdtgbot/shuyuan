@@ -25,7 +25,9 @@ function encrypt(data) {
   return encrypted.toString()
 }
 
-const headers = ["channel:25","deviceno:0000000000000000","platform:1","imei:","targetmodel:Mi 10","oaid:","version:3.2.9",`token:${localStorage.getItem('tk')}`,"user-agent:Mozilla/5.0 (Linux; Android 11; Pixel 4 XL Build/RP1A.200720.009; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/92.0.4515.115 Mobile Safari/537.36"]
+const ua = "Mozilla/5.0 (Linux; Android 13; Mi 13 Build/SKQ1.211006.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/109.0.5414.85 Mobile Safari/537.36"
+
+const headers = ["channel:25","deviceno:0000000000000000","platform:1","imei:","targetmodel:Mi 10","oaid:","version:3.2.9",`token:${localStorage.getItem('tk')}`,`user-agent:${ua}`]
 
 function CGET(url, da) {
   let timestamp = Math.round(new Date())
@@ -142,7 +144,7 @@ const chapter = (url) => {
   //未购买返回403和自动订阅地址
   if ($.isFee == 1&&$.isBuy == 0) throw JSON.stringify({
     code: 403,
-    message: `https://www.ciyuanji.com/chapter/${url.query('cid')}.html?bookId=${url.query('bid')}&ua=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36`
+    message: `https://www.ciyuanji.com/chapter/${url.query('cid')}.html?bookId=${url.query('bid')}&ua=${ua}`
   })
   if($.chapter.imgList) return decrypt($.chapter.content.replaceAll("\n","")).trim() + "\r\n" + $.chapter.imgList.map((item)=>{ return "<img src='" + item.imgUrl + "'/>"}).join("\n")
   else return decrypt($.chapter.content.replaceAll("\n","")).trim()
@@ -167,27 +169,17 @@ const profile = () => {
         {
           name: '账号',
           value: $.nickName,
-          url: 'https://www.ciyuanji.com/personalCenter/info?ua=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36'
+          url: `https://www.ciyuanji.com/personalCenter/info?ua=${ua}`
         },
         {
           name: '书币',
           value: $.currencyBalance,
-          url: 'https://www.ciyuanji.com/recharge?ua=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36',
+          url: `https://www.ciyuanji.com/recharge?ua=${ua}`
         },
         {
           name: '代币',
           value: $.couponBalance,
-          url: 'https://www.ciyuanji.com/recharge?ua=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36',
-        },
-        {
-          name: '月票',
-          value: $.monthCount,
-          url: 'https://www.ciyuanji.com/recharge?ua=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36',
-        },
-        {
-          name: '推荐票',
-          value: $.dayCount,
-          url: 'https://www.ciyuanji.com/recharge?ua=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36',
+          url: `https://www.ciyuanji.com/recharge?ua=${ua}`
         }
       ],
       extra: [
@@ -363,7 +355,7 @@ const login = (args) => {
 var bookSource = JSON.stringify({
   name: "次元姬小说",
   url: "hwnovel.com",
-  version: 105,
+  version: 106,
   authorization: JSON.stringify(['account','password']),
   cookies: [".hwnovel.com"],
   ranks: ranks

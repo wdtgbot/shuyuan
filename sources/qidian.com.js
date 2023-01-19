@@ -2,14 +2,15 @@ require('crypto-js')
 
 //转换更新时间 时间戳
 function timestampToTime(timestamp) {
-        var date = new Date(timestamp);//时间戳为10位需*1000，时间戳为13位的话不需乘1000
-        var Y = date.getFullYear() + '-';
-        var M = (date.getMonth()+1 < 10 ? '0'+(date.getMonth()+1):date.getMonth()+1) + '-';
-        var D = (date.getDate()< 10 ? '0'+date.getDate():date.getDate())+ ' ';
-        var h = (date.getHours() < 10 ? '0'+date.getHours():date.getHours())+ ':';
-        var m = (date.getMinutes() < 10 ? '0'+date.getMinutes():date.getMinutes()) + ':';
-        var s = date.getSeconds() < 10 ? '0'+date.getSeconds():date.getSeconds();
-        return Y+M+D+h+m+s;
+  if(timestamp.toString().length == 13) var date = new Date(timestamp);
+  else var date = new Date(timestamp * 1000);
+  var Y = date.getFullYear() + '-';
+  var M = (date.getMonth()+1 < 10 ? '0'+(date.getMonth()+1):date.getMonth()+1) + '-';
+  var D = (date.getDate()< 10 ? '0'+date.getDate():date.getDate())+ ' ';
+  var h = (date.getHours() < 10 ? '0'+date.getHours():date.getHours())+ ':';
+  var m = (date.getMinutes() < 10 ? '0'+date.getMinutes():date.getMinutes()) + ':';
+  var s = date.getSeconds() < 10 ? '0'+date.getSeconds():date.getSeconds();
+  return Y+M+D+h+m+s;
 }
 
 const qie = function (data) {
@@ -40,7 +41,7 @@ function CPOST(url,data){
   let QDInfo = qie(`0|7.9.242|1080|2206|1000014|12|1|Mi 12|792|1000014|4|0|${time}|0|0|||||1`)
   let sign = CryptoJS.MD5(str1).toString()
   let QDSign = qse(`Rv1rPTnczce|${time}|0||1|7.9.242|0|${sign}|f189adc92b816b3e9da29ea304d4a7e4`)
-  let headers = ["User-Agent:Mozilla/mobile QDReaderAndroid/7.9.242/792/1000014",`QDInfo:${QDInfo}`,`QDSign:${QDSign}`]
+  let headers = ["User-Agent:Mozilla/mobile QDReaderAndroid/7.9.242/792/1000014",`QDInfo:${QDInfo}`,`QDSign:${QDSign}`,`tstamp:${time}`]
   url = `https://druidv6.if.qidian.com/argus/api/${url}`
   let response = POST(url,{data,headers})
   let $ = JSON.parse(response)
@@ -54,7 +55,7 @@ function CGET(url){
   let QDInfo = qie(`0|7.9.242|1080|2206|1000014|12|1|Mi 12|792|1000014|4|0|${time}|0|0|||||1`)
   let sign = CryptoJS.MD5(str1).toString()
   let QDSign = qse(`Rv1rPTnczce|${time}|0||1|7.9.242|0|${sign}|f189adc92b816b3e9da29ea304d4a7e4`)
-  let headers = ["User-Agent:Mozilla/mobile QDReaderAndroid/7.9.242/792/1000014",`QDInfo:${QDInfo}`,`QDSign:${QDSign}`]
+  let headers = ["User-Agent:Mozilla/mobile QDReaderAndroid/7.9.242/792/1000014",`QDInfo:${QDInfo}`,`QDSign:${QDSign}`,`tstamp:${time}`]
   url = `https://druidv6.if.qidian.com/argus/api${url}`
   let response = GET(url,{headers})
   let $ = JSON.parse(response)
@@ -423,7 +424,7 @@ const ranks = [
 var bookSource = JSON.stringify({
   name: "起点中文网",
   url: "qidian.com",
-  version: 113,
+  version: 114,
   authorization: "https://passport.yuewen.com/yuewen.html?appid=13&areaid=31",
   cookies: [".qidian.com"],
   ranks: ranks

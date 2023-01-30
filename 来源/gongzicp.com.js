@@ -326,7 +326,7 @@ const ranks = [{
 ]
 
 const login = (args) => {
-    localStorage.setItem("imei", rand_str())
+    if(!imei) localStorage.setItem("imei", rand_str())
     if (!args[1]) {
         localStorage.setItem("token", gettoken())
         return "以游客身份登录"
@@ -353,7 +353,7 @@ const login = (args) => {
 var bookSource = JSON.stringify({
     name: "长佩阅读",
     url: "gongzicp.com",
-    version: 103,
+    version: 104,
     authorization: JSON.stringify(['account', 'password']),
     cookies: [".gongzicp.com"],
     ranks: ranks

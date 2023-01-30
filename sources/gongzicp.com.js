@@ -1,18 +1,49 @@
-const baseUrl = "https://m.gongzicp.com"
+require('crypto-js')
 
-//搜索
-const search = (key) => {
-    let response = GET(`${baseUrl}/novel/searchNovelOnlyByName?keyword=${encodeURI(key)}&searchType=1&finishType=0&novelType=0&sortType=1&page=1`, {
-        headers: ["X-Requested-With: XMLHttpRequest"]
+let token = localStorage.getItem("token")
+let imei = localStorage.getItem("imei")
+
+function rand_str() {
+    let len = 16
+    let text = ""
+    let charset = "abcdefghijklmnopqrstuvwxyz0123456789";
+    for (let i = 0; i < len; i++)
+        text += charset.charAt(Math.floor(Math.random() * charset.length))
+    return text
+}
+
+function gettoken() {
+    let randStr = Math.round(new Date() / 1000)
+    let requestKey = CryptoJS.SHA256(`${randStr}android_020501fss≤Â˜ı≥fhggh*&^%^ÇÏÍÎÍADΩ≈Ç≈√`).toString().slice(10, 42)
+    let headers = ["referer:https://www.gongzicp.com", `requestKey:${requestKey}`, `randStr:${randStr}`, "client:android", `imei:${imei}`, "version:android_020501", "token:", "User-Agent:chang pei yue du/2.5.1 (Android 13; Mi 12; Xiaomi)"]
+    let response = GET("https://api1.gongzicp.com/common/getToken", {
+        headers
     })
-    let array = []
     let $ = JSON.parse(response)
-    $.data.list.forEach((list) => {
+    return $.data.token
+}
+
+/**
+ * 搜索
+ * @params {string} key
+ * @returns {[{name, author, cover, detail}]}
+ */
+const search = (key) => {
+    let timestamp = Math.round(new Date() / 1000)
+    let nonce = timestamp + (Math.floor(Math.random() * 9000000) + 1000000).toString()
+    let requestKey = CryptoJS.SHA256(`collEnd=0&collStart=0&finishType=0&keyword=${encodeURIComponent(key)}&novelSell=0&novelType=0&page=1&sortType=1&wordType=0${timestamp}${nonce}${imei}android_020501fss≤Â˜ı≥fhggh*&^%^ÇÏÍÎÍADΩ≈Ç≈√${token}`).toString().slice(10, 42)
+    let headers = ["referer:https://www.gongzicp.com", `requestKey:${requestKey}`, "client:android", `imei:${imei}`, `nonce:${nonce}`, "version:android_020501", `timestamp:${timestamp}`, `token:${token}`, "User-Agent:chang pei yue du/2.5.1 (Android 13; Mi 12; Xiaomi)"]
+    let response = GET(`https://api1.gongzicp.com/v3/search/novels?novelSell=0&wordType=0&sortType=1&collEnd=0&novelType=0&page=1&collStart=0&keyword=${encodeURIComponent(key)}&finishType=0`, {
+        headers
+    })
+    let $ = JSON.parse(response)
+    let array = []
+    $.data.list.forEach((child) => {
         array.push({
-            name: list.novel_name.replace(/<span class=\"searchCode\">/g, "").replace(/<\/span>/g, ""),
-            author: list.novel_author,
-            cover: list.novel_cover,
-            detail: `${baseUrl}/novel-${list.novel_id}.html?id=${list.novel_id}`,
+            name: child.novel_name,
+            author: child.novel_author,
+            cover: child.novel_cover,
+            detail: child.novel_id
         })
     })
     return JSON.stringify(array)
@@ -20,518 +51,310 @@ const search = (key) => {
 
 //详情
 const detail = (url) => {
-    let response = GET(url, {
-        headers: ["User-Agent:Mozilla/5.0 (Linux; Android 10; Redmi K30) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.105 Mobile Safari/537.36"]
+    let timestamp = Math.round(new Date() / 1000)
+    let nonce = timestamp + (Math.floor(Math.random() * 9000000) + 1000000).toString()
+    let requestKey = CryptoJS.SHA256(`id=${url}${timestamp}${nonce}${imei}android_020501fss≤Â˜ı≥fhggh*&^%^ÇÏÍÎÍADΩ≈Ç≈√${token}`).toString().slice(10, 42)
+    let headers = ["referer:https://www.gongzicp.com", `requestKey:${requestKey}`, "client:android", `imei:${imei}`, `nonce:${nonce}`, "version:android_020501", `timestamp:${timestamp}`, `token:${token}`, "User-Agent:chang pei yue du/2.5.1 (Android 13; Mi 12; Xiaomi)"]
+    let response = GET(`https://api1.gongzicp.com/v3/novel/detail?id=${url}`, {
+        headers
     })
-    let $ = HTML.parse(response)
+    let $ = JSON.parse(response).data
     let book = {
-        summary: $('.intraductionParagraph').text(),
-        status: $('.novelTypeLabel').text(),
-        category: $('.labelsBox').text().replace("--", " "),
-        words: $('.numberBox>span:nth-child(3)').text().replace("字", ""),
-        update: $('.seeListBox > a').text(),
-        lastChapter: $('.chapterName').text(),
-        catalog: `${baseUrl}/novel/chapterList/id/${url.query("id")}`
+        summary: $.novel_info,
+        status: $.novel_process,
+        category: $.type_names.replaceAll(",", " "),
+        words: $.novel_wordnumber,
+        update: $.novel_uptime,
+        lastChapter: $.novel_newcname,
+        catalog: $.novel_id
     }
     return JSON.stringify(book)
 }
 
+//目录
 const catalog = (url) => {
-    let response = GET(url, {
-        headers: ["User-Agent: Mozilla/5.0 (Linux; Android 10; Redmi K30) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.105 Mobile Safari/537.36"]
+    let randStr = Math.round(new Date() / 1000)
+    let requestKey = CryptoJS.SHA256(`nid=${url}&order=1${randStr}android_020501fss≤Â˜ı≥fhggh*&^%^ÇÏÍÎÍADΩ≈Ç≈√${token}`).toString().slice(10, 42)
+    let headers = ["referer:https://www.gongzicp.com", `requestKey:${requestKey}`, `randStr:${randStr}`, "client:android", `imei:${imei}`, "version:android_020501", `token:${token}`, "User-Agent:chang pei yue du/2.5.1 (Android 13; Mi 12; Xiaomi)"]
+    let response = GET(`https://api1.gongzicp.com/apiv2/novel/getNovelDetailChapterList?nid=${url}&order=1`, {
+        headers
     })
-    let $ = HTML.parse(response)
+    let $ = JSON.parse(response)
     let array = []
-    $(".novelModel").forEach((chapter) => {
-        let $ = HTML.parse(chapter)
+    let volume = []
+    $.data.forEach((chapter) => {
+        if (JSON.stringify(volume).indexOf(chapter.chapter_volume_name) == -1) {
+            array.push({
+                name: chapter.chapter_volume_name
+            })
+            volume.push(chapter.chapter_volume_name)
+        }
         array.push({
-            name: $(".eclipes1:not(.boxbottom)").text(),
-            url: "https://m.gongzicp.com/read-" + $("a").attr("onclick").match(/\d+-\d+/)[0] + ".html",
-            vip: $("img") && $("img").length > 0 ? true : false
-
+            name: chapter.chapter_name,
+            url: `a?bid=${url}&cid=${chapter.chapter_id}`,
+            vip: chapter.chapter_ispay == 1
         })
     })
     return JSON.stringify(array)
 }
 
-
 //章节
 const chapter = (url) => {
-    let response = GET(url, {
-        headers: ["User-Agent:Mozilla/5.0 (Linux; Android 10; Redmi K30) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.105 Mobile Safari/537.36", `referer:${url}`]
+    let randStr = Math.round(new Date() / 1000)
+    let requestKey = CryptoJS.SHA256(`chapter_ids=${url.query("cid")}&nid=${url.query("bid")}${randStr}android_020501fss≤Â˜ı≥fhggh*&^%^ÇÏÍÎÍADΩ≈Ç≈√${token}`).toString().slice(10, 42)
+    let headers = ["referer:https://www.gongzicp.com", `requestKey:${requestKey}`, `randStr:${randStr}`, "client:android", `imei:${imei}`, "version:android_020501", `token:${token}`, "User-Agent:chang pei yue du/2.5.1 (Android 13; Mi 12; Xiaomi)"]
+    let response = GET(`https://api1.gongzicp.com/apiv2/novel/getNovelChapterContents?nid=${url.query("bid")}&chapter_ids=${url.query("cid")}`, {
+        headers
     })
-
-    let $ = HTML.parse(response)
-    // VIP章节未购买返回403和自动订阅地址
-    if ((/订阅本章（ 0点）/).test($(".subThisChapter"))) throw JSON.stringify({
+    let $ = JSON.parse(response)
+    //未购买返回403和自动订阅地址
+    if ($.data[url.query("cid")].chapter_ispay === 1) throw JSON.stringify({
         code: 403,
-        message: url
+        message: `https://www.gongzicp.com/read-${url.query("cid")}.html`
     })
-    //VIP章节已购买
-    return $(".novelInner")
-
+    return $.data[url.query("cid")].content.trim()
 }
 
-//个人中心
+/**
+ * 个人
+ * @returns {[{url, nickname, recharge, balance[{name, coin}], sign}]}
+ */
 const profile = () => {
-    let response = GET("https://m.gongzicp.com/user/index?user_id=", {
-        headers: ["X-Requested-With:XMLHttpRequest"]
+    let randStr = Math.round(new Date() / 1000)
+    let requestKey = CryptoJS.SHA256(`${randStr}android_020501fss≤Â˜ı≥fhggh*&^%^ÇÏÍÎÍADΩ≈Ç≈√${token}`).toString().slice(10, 42)
+    let headers = ["referer:https://www.gongzicp.com", `requestKey:${requestKey}`, `randStr:${randStr}`, "client:android", `imei:${imei}`, "version:android_020501", `token:${token}`, "User-Agent:chang pei yue du/2.5.1 (Android 13; Mi 12; Xiaomi)"]
+    let response = GET("https://api1.gongzicp.com/apiv2/user/getUserInfo", {
+        headers
     })
     let $ = JSON.parse(response).data
     return JSON.stringify({
         basic: [{
-                name: "账号",
+                name: '账号',
                 value: $.nick_name,
-                url: `https://m.gongzicp.com/user/index`
-            },
-            {
-                name: '等级',
-                value: $.level_number,
-                url: "https://m.gongzicp.com/user/level"
+                url: 'https://www.gongzicp.com/user/home'
             },
             {
                 name: '玉佩',
-                value: $.gold2,
-                url: "https://m.gongzicp.com/user/topUp"
+                value: $.gold,
+                url: 'https://www.gongzicp.com/user/charge',
             },
             {
                 name: '海星',
-                value: $.nation_code,
-                url: "https://m.gongzicp.com/user/wallet"
-            }
-        ],
-        extra: [{
-                name: '自动签到',
-                type: 'permission',
-                method: 'sign',
-                times: 'day'
-            },
-            {
-                name: '书架',
-                type: 'books',
-                method: 'bookshelf'
+                value: $.rec_ticket,
+                url: 'https://www.gongzicp.com/user/charge',
             }
         ]
     })
 }
-const bookshelf = (page) => {
-    let response = GET(`https://m.gongzicp.com/bookShelf/shelfList?sort_key=3&sort_flag=2&status=0&page=${page+1}&novel_name=&did=0`, {
-        headers: ["X-Requested-With:XMLHttpRequest"]
-    })
-    let list = JSON.parse(response).data.novel.list
-    let books = list.map(book => ({
-        name: book.novel_name,
-        author: book.novel_author,
-        cover: book.novel_cover,
-        detail: `https://m.gongzicp.com/novel-${book.novel_id}.html?id=${book.novel_id}`
-    }))
-    return JSON.stringify({
-        end: list.length == 0,
-        books
-    })
-}
 
-//签到
-const sign = () => {
-    let res = POST('https://m.gongzicp.com/user/sign', {
-        data:"..",
-        headers: ["X-Requested-With: XMLHttpRequest"]
-    })
-    let $ = JSON.parse(res)
-    return $.msg == "操作成功" || $.msg == "您已签到" 
-}
+//排行榜
 const rank = (title, category, page) => {
-    d = 2
-    if (title == 5 || title == 10 || title == 12) {
-        d = 5
-    }
-    let url = `https://m.gongzicp.com/home/ranking?&t=${category}&r=${title}&d=${d}&p=${page+1}`
-    let response = GET(url, {
-        headers: ["X-Requested-With: XMLHttpRequest"]
+    let randStr = Math.round(new Date() / 1000)
+    let requestKey = CryptoJS.SHA256(`date_type=${category}&novel_type_id=0&page=${page+1}&ranking_type_id=${title}${randStr}android_020501fss≤Â˜ı≥fhggh*&^%^ÇÏÍÎÍADΩ≈Ç≈√${token}`).toString().slice(10, 42)
+    let headers = ["referer:https://www.gongzicp.com", `requestKey:${requestKey}`, `randStr:${randStr}`, "client:android", `imei:${imei}`, "version:android_020501", `token:${token}`, "User-Agent:chang pei yue du/2.5.1 (Android 13; Mi 12; Xiaomi)"]
+    let response = GET(`https://api1.gongzicp.com/apiv2/novel/ranking?novel_type_id=0&ranking_type_id=${title}&date_type=${category}&page=${page + 1}`, {
+        headers
     })
     let $ = JSON.parse(response)
     let books = []
-    $.data.forEach((item) => {
+    $.data.forEach((child) => {
         books.push({
-            name: item.novel_name,
-            author: item.novel_author,
-            cover: item.novel_cover,
-            detail: `https://m.gongzicp.com/novel-${item.novel_id}.html?id=${item.novel_id}`,
+            name: child.novel_name,
+            author: child.novel_author,
+            cover: child.novel_cover,
+            detail: child.novel_id,
         })
     })
     return JSON.stringify({
-        books
+        end: $.data.length === 0,
+        books: books
     })
 }
+
+
 const ranks = [{
-    "title": {
-        "key": "1",
-        "value": "畅销榜"
+        title: {
+            key: '1',
+            value: '畅销榜'
+        },
+        categories: [{
+                key: "1",
+                value: "昨日"
+            },
+            {
+                key: "2",
+                value: "7天"
+            },
+            {
+                key: "3",
+                value: "30天"
+            }
+        ]
     },
-    "categories": [{
-        "key": "75",
-        "value": "全部"
-    }, {
-        "key": "3",
-        "value": "古代"
-    }, {
-        "key": "1",
-        "value": "现代"
-    }, {
-        "key": "4",
-        "value": "幻想"
-    }, {
-        "key": "6",
-        "value": "悬疑"
-    }, {
-        "key": "66",
-        "value": "短佩"
-    }, {
-        "key": "9",
-        "value": "架空"
-    }, {
-        "key": "73",
-        "value": "无CP"
-    }, {
-        "key": "17",
-        "value": "百合"
-    }]
-}, {
-    "title": {
-        "key": "2",
-        "value": "上架榜"
+    {
+        title: {
+            key: '2',
+            value: '上架榜'
+        },
+        categories: [{
+                key: "1",
+                value: "昨日"
+            },
+            {
+                key: "2",
+                value: "7天"
+            }
+        ]
     },
-    "categories": [{
-        "key": "75",
-        "value": "全部"
-    }, {
-        "key": "3",
-        "value": "古代"
-    }, {
-        "key": "1",
-        "value": "现代"
-    }, {
-        "key": "4",
-        "value": "幻想"
-    }, {
-        "key": "6",
-        "value": "悬疑"
-    }, {
-        "key": "66",
-        "value": "短佩"
-    }, {
-        "key": "9",
-        "value": "架空"
-    }, {
-        "key": "73",
-        "value": "无CP"
-    }, {
-        "key": "17",
-        "value": "百合"
-    }]
-}, {
-    "title": {
-        "key": "3",
-        "value": "风云榜"
+    {
+        title: {
+            key: '3',
+            value: '人气榜'
+        },
+        categories: [{
+                key: "2",
+                value: "7天"
+            },
+            {
+                key: "3",
+                value: "30天"
+            }
+        ]
     },
-    "categories": [{
-        "key": "75",
-        "value": "全部"
-    }, {
-        "key": "3",
-        "value": "古代"
-    }, {
-        "key": "1",
-        "value": "现代"
-    }, {
-        "key": "4",
-        "value": "幻想"
-    }, {
-        "key": "6",
-        "value": "悬疑"
-    }, {
-        "key": "66",
-        "value": "短佩"
-    }, {
-        "key": "9",
-        "value": "架空"
-    }, {
-        "key": "73",
-        "value": "无CP"
-    }, {
-        "key": "17",
-        "value": "百合"
-    }]
-}, {
-    "title": {
-        "key": "4",
-        "value": "热读榜"
+    {
+        title: {
+            key: '5',
+            value: '完结榜'
+        },
+        categories: [{
+                key: "5",
+                value: "本月"
+            },
+            {
+                key: "6",
+                value: "本季"
+            },
+            {
+                key: "7",
+                value: "本年"
+            }
+        ]
     },
-    "categories": [{
-        "key": "75",
-        "value": "全部"
-    }, {
-        "key": "3",
-        "value": "古代"
-    }, {
-        "key": "1",
-        "value": "现代"
-    }, {
-        "key": "4",
-        "value": "幻想"
-    }, {
-        "key": "6",
-        "value": "悬疑"
-    }, {
-        "key": "66",
-        "value": "短佩"
-    }, {
-        "key": "9",
-        "value": "架空"
-    }, {
-        "key": "73",
-        "value": "无CP"
-    }, {
-        "key": "17",
-        "value": "百合"
-    }]
-}, {
-    "title": {
-        "key": "5",
-        "value": "完结榜"
+    {
+        title: {
+            key: '6',
+            value: '风云榜'
+        },
+        categories: [{
+                key: "2",
+                value: "7天"
+            },
+            {
+                key: "3",
+                value: "30天"
+            },
+            {
+                key: "8",
+                value: "总榜"
+            }
+        ]
     },
-    "categories": [{
-        "key": "75",
-        "value": "全部"
-    }, {
-        "key": "3",
-        "value": "古代"
-    }, {
-        "key": "1",
-        "value": "现代"
-    }, {
-        "key": "4",
-        "value": "幻想"
-    }, {
-        "key": "6",
-        "value": "悬疑"
-    }, {
-        "key": "66",
-        "value": "短佩"
-    }, {
-        "key": "9",
-        "value": "架空"
-    }, {
-        "key": "73",
-        "value": "无CP"
-    }, {
-        "key": "17",
-        "value": "百合"
-    }]
-}, {
-    "title": {
-        "key": "6",
-        "value": "人气榜"
+    {
+        title: {
+            key: '16',
+            value: '新锐榜'
+        },
+        categories: [{
+                key: "81",
+                value: "新人"
+            },
+            {
+                key: "82",
+                value: "热读"
+            }
+        ]
     },
-    "categories": [{
-        "key": "75",
-        "value": "全部"
-    }, {
-        "key": "3",
-        "value": "古代"
-    }, {
-        "key": "1",
-        "value": "现代"
-    }, {
-        "key": "4",
-        "value": "幻想"
-    }, {
-        "key": "6",
-        "value": "悬疑"
-    }, {
-        "key": "66",
-        "value": "短佩"
-    }, {
-        "key": "9",
-        "value": "架空"
-    }, {
-        "key": "73",
-        "value": "无CP"
-    }, {
-        "key": "17",
-        "value": "百合"
-    }]
-}, {
-    "title": {
-        "key": "7",
-        "value": "新书榜"
+    {
+        title: {
+            key: '7',
+            value: '新书榜'
+        },
+        categories: [{
+                key: "1",
+                value: "昨日"
+            },
+            {
+                key: "2",
+                value: "7天"
+            }
+        ]
     },
-    "categories": [{
-        "key": "75",
-        "value": "全部"
-    }, {
-        "key": "3",
-        "value": "古代"
-    }, {
-        "key": "1",
-        "value": "现代"
-    }, {
-        "key": "4",
-        "value": "幻想"
-    }, {
-        "key": "6",
-        "value": "悬疑"
-    }, {
-        "key": "66",
-        "value": "短佩"
-    }, {
-        "key": "9",
-        "value": "架空"
-    }, {
-        "key": "73",
-        "value": "无CP"
-    }, {
-        "key": "17",
-        "value": "百合"
-    }]
-}, {
-    "title": {
-        "key": "8",
-        "value": "新人榜"
+    {
+        title: {
+            key: '9',
+            value: '萌新榜'
+        },
+        categories: [{
+                key: "1",
+                value: "昨日"
+            },
+            {
+                key: "2",
+                value: "7天"
+            }
+        ]
     },
-    "categories": [{
-        "key": "75",
-        "value": "全部"
-    }, {
-        "key": "3",
-        "value": "古代"
-    }, {
-        "key": "1",
-        "value": "现代"
-    }, {
-        "key": "4",
-        "value": "幻想"
-    }, {
-        "key": "6",
-        "value": "悬疑"
-    }, {
-        "key": "66",
-        "value": "短佩"
-    }, {
-        "key": "9",
-        "value": "架空"
-    }, {
-        "key": "73",
-        "value": "无CP"
-    }, {
-        "key": "17",
-        "value": "百合"
-    }]
-}, {
-    "title": {
-        "key": "9",
-        "value": "萌新榜"
-    },
-    "categories": [{
-        "key": "75",
-        "value": "全部"
-    }, {
-        "key": "3",
-        "value": "古代"
-    }, {
-        "key": "1",
-        "value": "现代"
-    }, {
-        "key": "4",
-        "value": "幻想"
-    }, {
-        "key": "6",
-        "value": "悬疑"
-    }, {
-        "key": "66",
-        "value": "短佩"
-    }, {
-        "key": "9",
-        "value": "架空"
-    }, {
-        "key": "73",
-        "value": "无CP"
-    }, {
-        "key": "17",
-        "value": "百合"
-    }]
-}, {
-    "title": {
-        "key": "10",
-        "value": "打赏榜"
-    },
-    "categories": [{
-        "key": "75",
-        "value": "全部"
-    }, {
-        "key": "3",
-        "value": "古代"
-    }, {
-        "key": "1",
-        "value": "现代"
-    }, {
-        "key": "4",
-        "value": "幻想"
-    }, {
-        "key": "6",
-        "value": "悬疑"
-    }, {
-        "key": "66",
-        "value": "短佩"
-    }, {
-        "key": "9",
-        "value": "架空"
-    }, {
-        "key": "73",
-        "value": "无CP"
-    }, {
-        "key": "17",
-        "value": "百合"
-    }]
-}, {
-    "title": {
-        "key": "12",
-        "value": "勤奋榜"
-    },
-    "categories": [{
-        "key": "75",
-        "value": "全部"
-    }, {
-        "key": "3",
-        "value": "古代"
-    }, {
-        "key": "1",
-        "value": "现代"
-    }, {
-        "key": "4",
-        "value": "幻想"
-    }, {
-        "key": "6",
-        "value": "悬疑"
-    }, {
-        "key": "66",
-        "value": "短佩"
-    }, {
-        "key": "9",
-        "value": "架空"
-    }, {
-        "key": "73",
-        "value": "无CP"
-    }, {
-        "key": "17",
-        "value": "百合"
-    }]
-}]
+    {
+        title: {
+            key: '10',
+            value: '赞赏榜'
+        },
+        categories: [{
+                key: "4",
+                value: "本周"
+            },
+            {
+                key: "5",
+                value: "本月"
+            },
+            {
+                key: "8",
+                value: "总榜"
+            }
+        ]
+    }
+]
+
+const login = (args) => {
+    localStorage.setItem("imei", rand_str())
+    if (!args[1]) {
+        localStorage.setItem("token", gettoken())
+        return "以游客身份登录"
+    } else {
+        let data = JSON.stringify({
+            password: args[1],
+            ncode: "86",
+            username: args[0]
+        })
+        let randStr = Math.round(new Date() / 1000)
+        let requestKey = CryptoJS.SHA256(`${data}${randStr}android_020501fss≤Â˜ı≥fhggh*&^%^ÇÏÍÎÍADΩ≈Ç≈√${token}`).toString().slice(10, 42)
+        let headers = ["referer:https://www.gongzicp.com", `requestKey:${requestKey}`, `randStr:${randStr}`, "client:android", `imei:${imei}`, "version:android_020501", `token:${token}`, "User-Agent:chang pei yue du/2.5.1 (Android 13; Mi 12; Xiaomi)"]
+        let response = POST("https://api1.gongzicp.com/apiv2/login/userLogin", {
+            data,
+            headers
+        })
+        let $ = JSON.parse(response)
+        if ($.code === -1) return "请先只输入账号登录，进行游客登录"
+        if ($.code != 1) return $.msg
+        localStorage.setItem("token", $.data.token)
+    }
+}
+
 var bookSource = JSON.stringify({
-    name: "长佩文学",
+    name: "长佩阅读",
     url: "gongzicp.com",
-    version: 102,
-    authorization: "https://m.gongzicp.com/login/signIn",
+    version: 103,
+    authorization: JSON.stringify(['account', 'password']),
     cookies: [".gongzicp.com"],
     ranks: ranks
 })

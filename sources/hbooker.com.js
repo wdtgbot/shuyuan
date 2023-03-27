@@ -13,10 +13,10 @@ const decrypt = function (data, key) {
 
 const login_token = localStorage.getItem('login_token')
 const account = localStorage.getItem('account')
-const app_version = "1.5.587"
+const app_version = "1.5.589"
 const device_token = "shuke_"
 
-const headers = [`user-agent:Android  com.kuangxiang.novel  ${app_version},Xiaomi, Mi 10, 31, 12`]
+const headers = [`user-agent:Android  com.kuangxiang.novel  ${app_version},Xiaomi, Mi 12, 33, 13`]
 
 function JsonToUrl(data) {
   let tempArr = [];

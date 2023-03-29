@@ -15,18 +15,19 @@ const decrypt = function (data,iv) {
 
 //转换时间戳
 function timestampToTime(timestamp) {
-  if(timestamp.length == 13) var date = new Date(timestamp);
-  else var date = new Date(timestamp * 1000);
-  var Y = date.getFullYear() + '-';
-  var M = (date.getMonth()+1 < 10 ? '0'+(date.getMonth()+1):date.getMonth()+1) + '-';
-  var D = (date.getDate()< 10 ? '0'+date.getDate():date.getDate())+ ' ';
-  var h = (date.getHours() < 10 ? '0'+date.getHours():date.getHours())+ ':';
-  var m = (date.getMinutes() < 10 ? '0'+date.getMinutes():date.getMinutes()) + ':';
-        var s = date.getSeconds() < 10 ? '0'+date.getSeconds():date.getSeconds();
-        return Y+M+D+h+m+s;
+    let date
+    if (timestamp.length == 13) date = new Date(timestamp);
+    else date = new Date(timestamp * 1000);
+    let Y = date.getFullYear() + '-';
+    let M = (date.getMonth() + 1 < 10 ? '0' + (date.getMonth() + 1) : date.getMonth() + 1) + '-';
+    let D = (date.getDate() < 10 ? '0' + date.getDate() : date.getDate()) + ' ';
+    let h = (date.getHours() < 10 ? '0' + date.getHours() : date.getHours()) + ':';
+    let m = (date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes()) + ':';
+    let s = date.getSeconds() < 10 ? '0' + date.getSeconds() : date.getSeconds();
+    return Y + M + D + h + m + s;
 }
 
-const headers = ['platform: android','app-version: 70500','application-id: com.kmxs.reader',`sign: ${CryptoJS.MD5("app-version=70500application-id=com.kmxs.readerplatform=androidd3dGiJc651gSQ8w1")}`,'user-agent:webviewversion/0']
+const headers = ['platform: android','app-version: 71900','application-id: com.kmxs.reader',`sign: ${CryptoJS.MD5("app-version=71900application-id=com.kmxs.readerplatform=androidd3dGiJc651gSQ8w1")}`,'user-agent:webviewversion/0']
 
 /**
  * 搜索
@@ -69,7 +70,7 @@ const detail = (url) => {
 //目录
 const catalog = (url) => {
   let sign = CryptoJS.MD5(`id=${url}d3dGiJc651gSQ8w1`)
-  let response = GET(`https://api-ks.wtzw.com/api/v1/chapter/chapter-list?&id=${url}&sign=${sign}`,{headers})
+  let response = GET(`https://api-ks.wtzw.com/api/v1/chapter/chapter-list?id=${url}&sign=${sign}`,{headers})
   let $ = JSON.parse(response)
   let array = []
   $.data.chapter_lists.forEach((chapter) => {

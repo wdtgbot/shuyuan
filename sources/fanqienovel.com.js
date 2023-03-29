@@ -71,7 +71,7 @@ const catalog = (url) => {
             }
             array.push({
                 name: x.title,
-                url: x.item_id
+                url: `group_id=${x.item_id}&item_id=${x.item_id}`
             })
         })
     }
@@ -80,13 +80,13 @@ const catalog = (url) => {
 
 //章节
 const chapter = (url) => {
-    let response = GET(`https://novel.snssdk.com/api/novel/book/reader/full/v1/?group_id=${url}&item_id=${url}&aid=1967`)
-    let $ = HTML.parse(response)
-    return $("article")
+    let response = GET(`https://novel.snssdk.com/api/novel/book/reader/full/v1/?${url}&aid=1967`)
+    let $ = HTML.parse(JSON.parse(response).data.content)
+    return $("article").remove("title,link,h2")
 }
 
 var bookSource = JSON.stringify({
     name: "番茄小说",
     url: "fanqienovel.com",
-    version: 112
+    version: 113
 })

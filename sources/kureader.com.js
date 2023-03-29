@@ -93,7 +93,7 @@ const chapter = (url) => {
 }
 
 var bookSource = JSON.stringify({
-  name: "熊猫免费小说",
+  name: "熊猫脑洞小说",
   url: "kureader.com",
-  version: 100
+  version: 101
 })

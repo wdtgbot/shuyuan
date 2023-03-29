@@ -56,7 +56,6 @@ const detail = (url) => {
 const catalog = (url) => {
     let res = GET(`https://api5-normal-lf.fqnovel.com/reading/bookapi/directory/all_items/v/?book_id=${url}&iid=2159861899465991&aid=1967&version_code=311&update_version_code=31132`)
     let item_list = spArr(JSON.parse(res).data.item_list, 100)
-    console.log(item_list)
     let array = []
     let v = []
     for (let i = 0; i < item_list.length; i++) {
@@ -71,7 +70,7 @@ const catalog = (url) => {
             }
             array.push({
                 name: x.title,
-                url: `group_id=${x.item_id}&item_id=${x.item_id}`
+                url: x.item_id
             })
         })
     }
@@ -80,7 +79,7 @@ const catalog = (url) => {
 
 //章节
 const chapter = (url) => {
-    let response = GET(`https://novel.snssdk.com/api/novel/book/reader/full/v1/?${url}&aid=1967`)
+    let response = GET(`https://novel.snssdk.com/api/novel/book/reader/full/v1/?group_id=${url}&item_id=${url}&aid=1967`)
     let $ = HTML.parse(JSON.parse(response).data.content)
     return $("article").remove("title,link,h2")
 }
